@@ -1,14 +1,12 @@
 {
-  buildGoApplication,
+  buildGoModule,
   lib,
-  go,
 }:
-buildGoApplication {
-  inherit go;
+buildGoModule {
   pname = "linktui";
   version = "git";
   src = ../.;
-  modules = ../govendor.toml;
+  vendorHash = "sha256-0BeAWfhgDHAR/3L5W8T2hAoW0VretUwTKRMmzwK+aAA=";
 
   meta = with lib; {
     description = "Tui based wifi, bluetooth and vpn manager for linux";

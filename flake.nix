@@ -4,14 +4,12 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     git-hooks.url = "github:cachix/git-hooks.nix";
-    go-overlay.url = "github:purpleclay/go-overlay";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      go-overlay,
       git-hooks,
       ...
     }:
@@ -20,17 +18,15 @@
         "x86_64-linux"
         "aarch64-linux"
       ];
-      overlays = [ (import go-overlay) ];
       forAllSystems =
         f:
         nixpkgs.lib.genAttrs systems (
           system:
           f {
             system = system;
-            pkgs = import nixpkgs { inherit system overlays; };
+            pkgs = import nixpkgs { inherit system; };
           }
         );
-      mkLinktui = pkgs: pkgs.callPackage ./nix/package.nix { go = pkgs.go-bin.fromGoMod ./go.mod; };
     in
     {
       packages = forAllSystems (
@@ -39,7 +35,7 @@
           system,
         }:
         {
-          default = mkLinktui pkgs;
+          default = pkgs.callPackage ./nix/package.nix { };
           linktui = self.packages.${system}.default;
         }
       );
@@ -82,16 +78,12 @@
       devShells = forAllSystems (
         { pkgs, system }:
         let
-          go = pkgs.go-bin.fromGoMod ./go.mod;
           inherit (self.checks.${system}.pre-commit-check) shellHook enabledPackages;
         in
         {
           default = pkgs.mkShell {
-            buildInputs = [ go-overlay.packages.${system}.govendor ] ++ enabledPackages;
-            shellHook = shellHook + ''
-              export PATH=${go}/bin:$PATH
-              govendor
-            '';
+            buildInputs = [ pkgs.go ] ++ enabledPackages;
+            shellHook = shellHook;
           };
         }
       );
